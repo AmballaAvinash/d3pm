@@ -99,7 +99,7 @@ if __name__ == "__main__":
                         gif.append(Image.fromarray(img))
 
                     gif[0].save(
-                        f"contents/sample_{global_step}.gif",
+                        f"contents/CIFAR/sample_{global_step}.gif",
                         save_all=True,
                         append_images=gif[1:],
                         duration=100,
@@ -107,7 +107,7 @@ if __name__ == "__main__":
                     )
 
                     last_img = gif[-1]
-                    last_img.save(f"contents/sample_{global_step}_last.png")
+                    last_img.save(f"contents/CIFAR/sample_{global_step}_last.png")
 
                     # log images
                     wandb.log(

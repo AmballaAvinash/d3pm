@@ -1,0 +1,1 @@
+contents    -outputs stored here        d3pm_runner.py: ON mnist dataset- D3Pm with uniform transition matrix- use D3PM moduled3pm_runner_cifar.py:  - CIFAR dataset - used dit.py    dit.py:    - DIT LLAMAlm_deepspeed.py:    - wiki text    lm.py:test.ipynb: intial code writeup. 

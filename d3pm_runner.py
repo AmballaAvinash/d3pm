@@ -8,6 +8,7 @@ from torchvision.datasets import MNIST
 from torchvision.utils import make_grid
 from tqdm import tqdm
 
+# downsampling blocks
 blk = lambda ic, oc: nn.Sequential(
     nn.Conv2d(ic, oc, 5, padding=2),
     nn.GroupNorm(oc // 8, oc),
@@ -20,6 +21,8 @@ blk = lambda ic, oc: nn.Sequential(
     nn.LeakyReLU(),
 )
 
+
+# up sampling blocks
 blku = lambda ic, oc: nn.Sequential(
     nn.Conv2d(ic, oc, 5, padding=2),
     nn.GroupNorm(oc // 8, oc),
@@ -160,6 +163,7 @@ class D3PM(nn.Module):
 
         for beta in self.beta_t:
 
+            # uniform tranition matrix
             if forward_type == "uniform":
                 mat = torch.ones(num_classes, num_classes) * beta / num_classes
                 mat.diagonal().fill_(1 - (num_classes - 1) * beta / num_classes)
@@ -234,6 +238,7 @@ class D3PM(nn.Module):
 
         return bc
 
+    # loss variational bound
     def vb(self, dist1, dist2):
 
         # flatten dist1 and dist2
