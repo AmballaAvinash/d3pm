@@ -201,6 +201,7 @@ class D3PM(nn.Module):
         # out[i, j, k, l, m] = a[t[i, j, k, l], x[i, j, k, l], m]
         return a[t - 1, x, :]
 
+    # Calculates the posterior logits for the diffusion process
     def q_posterior_logits(self, x_0, x_t, t):
         # if t == 1, this means we return the L_0 loss, so directly try to x_0 logits.
         # otherwise, we return the L_{t-1} loss.
@@ -251,6 +252,7 @@ class D3PM(nn.Module):
         )
         return out.sum(dim=-1).mean()
 
+    # Samples from the forward diffusion process.
     def q_sample(self, x_0, t, noise):
         # forward process, x_0 is the clean input.
         logits = torch.log(self._at(self.q_mats, t, x_0) + self.eps)
@@ -258,6 +260,7 @@ class D3PM(nn.Module):
         gumbel_noise = -torch.log(-torch.log(noise))
         return torch.argmax(logits + gumbel_noise, dim=-1)
 
+    # logits of the clean image using the backbone model
     def model_predict(self, x_0, t, cond):
         # this part exists because in general, manipulation of logits from model's logit
         # so they are in form of x_0's logit might be independent to model choice.
@@ -268,12 +271,15 @@ class D3PM(nn.Module):
 
         return predicted_x0_logits
 
+    # forward pass of the D3PM model, including the forward diffusion process and the prediction of the clean image logits
     def forward(self, x: torch.Tensor, cond: torch.Tensor = None) -> torch.Tensor:
         """
         Makes forward diffusion x_t from x_0, and tries to guess x_0 value from x_t using x0_model.
         x is one-hot of dim (bs, ...), with int values of 0 to num_classes - 1
         """
         t = torch.randint(1, self.n_T, (x.shape[0],), device=x.device)
+        
+        # foward diffusion
         x_t = self.q_sample(
             x, t, torch.rand((*x.shape, self.num_classses), device=x.device)
         )
@@ -296,11 +302,13 @@ class D3PM(nn.Module):
 
         ce_loss = torch.nn.CrossEntropyLoss()(predicted_x0_logits, x)
 
+        # Lhybrid = Lsimple + lambda*Lvb
         return self.hybrid_loss_coeff * vb_loss + ce_loss, {
             "vb_loss": vb_loss.detach().item(),
             "ce_loss": ce_loss.detach().item(),
         }
 
+    # Samples from the reverse diffusion process 
     def p_sample(self, x, t, cond, noise):
 
         predicted_x0_logits = self.model_predict(x, t, cond)
@@ -316,6 +324,7 @@ class D3PM(nn.Module):
         )
         return sample
 
+    # Generates samples from the model by iteratively applying the reverse diffusion process
     def sample(self, x, cond=None):
         for t in reversed(range(1, self.n_T)):
             t = torch.tensor([t] * x.shape[0], device=x.device)
@@ -324,7 +333,8 @@ class D3PM(nn.Module):
             )
 
         return x
-
+    
+    # Generates a sequence of images during the reverse diffusion process
     def sample_with_image_sequence(self, x, cond=None, stride=10):
         steps = 0
         images = []
